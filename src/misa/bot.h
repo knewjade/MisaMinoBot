@@ -18,6 +18,7 @@ public:
     void outputAction();
 
     void run();
+    void init();
 
     struct tetris_ai {
         int style;
