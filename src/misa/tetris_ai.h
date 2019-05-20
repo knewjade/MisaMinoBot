@@ -24,16 +24,16 @@ namespace AI {
     struct Moving
     {
         enum {
-            MOV_NULL,
+            MOV_NULL,  // 0
             MOV_L,
             MOV_R,
-            MOV_LL,
+            MOV_LL,  // 3
             MOV_RR,
             MOV_D,
             MOV_DD,
             MOV_LSPIN,
             MOV_RSPIN,
-            MOV_DROP,
+            MOV_DROP,  // 9
             MOV_HOLD,
             MOV_SPIN2,
             MOV_REFRESH,

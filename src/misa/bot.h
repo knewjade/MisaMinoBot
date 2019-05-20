@@ -7,6 +7,11 @@
 #include <sstream>
 #include "tetrisgame.h"
 
+struct Result {
+    AI::GemType holdGem;
+    int attack;
+};
+
 class Bot {
 public:
     Bot();
@@ -15,7 +20,7 @@ public:
 
     void startParser();
     void setup();
-    void outputAction();
+    void outputAction(Result &result, std::stringstream &out);
 
     void run();
     void init();
@@ -50,7 +55,7 @@ private:
     void updateField(const std::string & s);
     void changeSettings(const std::string & p1,const std::string & p2);
 
-    void processMoves();
+    void processMoves(Result &result);
 
     char m_hold;
     char m_queue[8];

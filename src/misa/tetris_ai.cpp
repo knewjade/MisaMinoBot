@@ -1404,12 +1404,6 @@ namespace AI {
         AI::MovingSimple best = AISearch(p->ai_param, p->pool, p->hold, p->cur, p->x, p->y, p->next, p->canhold,
                                          p->upcomeAtt, p->maxDeep, searchDeep, p->level, p->player);
 
-        std::cout
-                << best.hold << ","
-                << best.x << ","
-                << 20 - best.y - 1 << ","
-                << std::endl;
-
         AI::Moving mov;
         const AI::GameField &gamefield = p->pool;
         std::vector<AI::Gem> &gemNext = p->next;

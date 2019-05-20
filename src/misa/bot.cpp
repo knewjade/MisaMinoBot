@@ -1,6 +1,9 @@
 #include "bot.h"
 #include <cassert>
-#include <vector>
+#include <deque>
+#include <array>
+#include <random>
+#include <algorithm>
 
 using namespace std;
 
@@ -38,7 +41,10 @@ void Bot::startParser() {
         } else if (command == "action2") {
             string part1, part2;
             cin >> part1 >> part2;
-            outputAction();
+            std::stringstream out;
+            Result result;
+            outputAction(result, out);
+            std::cout << out.str() << std::endl;
         } else if (command.size() == 0) {
             // no more commands, exit.
             break;
@@ -309,7 +315,7 @@ void Bot::setup() {
     tetris.m_attack = 0;
 }
 
-void Bot::processMoves() {
+void Bot::processMoves(Result &result) {
     tetris.m_state = AI::Tetris::STATE_MOVING;
     while (tetris.ai_movs_flag == -1 && !tetris.ai_movs.movs.empty()) {
         int mov = tetris.ai_movs.movs[0];
@@ -323,8 +329,24 @@ void Bot::processMoves() {
         else if (mov == AI::Moving::MOV_LL) { tetris.tryXXMove(-1); } //{ tetris.mov_llrr = AI::Moving::MOV_LL; }
         else if (mov == AI::Moving::MOV_RR) { tetris.tryXXMove(1); } //{ tetris.mov_llrr = AI::Moving::MOV_RR; }
         else if (mov == AI::Moving::MOV_DD) tetris.tryYYMove(1);
-        else if (mov == AI::Moving::MOV_DROP) tetris.drop();
-        else if (mov == AI::Moving::MOV_HOLD) {
+        else if (mov == AI::Moving::MOV_DROP) {
+            while (tetris.tryYMove(1));
+
+            std::cout
+                    << "piece=" << tetris.m_cur.num << ", "
+                    << "spin=" << tetris.m_cur.spin << ", "
+                    << "x=" << tetris.m_cur_x << ", "
+                    << "y=" << 20 - tetris.m_cur_y - 1 << ", "
+                    << "isHold=" << tetris.m_hold << ", "
+                    << "next hold=" << tetris.m_pool.m_hold << ", "
+                    << std::endl;
+
+            if (tetris.m_hold) {
+                result.holdGem = static_cast<AI::GemType>(tetris.m_pool.m_hold);
+            }
+
+            tetris.drop();
+        } else if (mov == AI::Moving::MOV_HOLD) {
             tetris.tryHold();
         } else if (mov == AI::Moving::MOV_SPIN2) {
             if (AI::spin180Enable()) {
@@ -335,9 +357,18 @@ void Bot::processMoves() {
         }
     }
     tetris.clearLines();
+
+    std::cout
+            << "clears=" << tetris.m_clear_info.clears << ", "
+            << "attack=" << tetris.m_clear_info.attack << ", "
+            << "b2b=" << tetris.m_clear_info.b2b << ", "
+            << "combo=" << tetris.m_clear_info.combo << ", "
+            << std::endl;
+
+    result.attack = tetris.m_clear_info.attack;
 }
 
-void Bot::outputAction() {
+void Bot::outputAction(Result &result, std::stringstream &out) {
     std::vector<AI::Gem> next;
     for (int j = 0; j < 5; ++j) //NEXT size
         next.push_back(tetris.m_next[j]);
@@ -350,15 +381,13 @@ void Bot::outputAction() {
               tetris.m_cur_x, tetris.m_cur_y, next, canhold, m_upcomeAtt,
               deep, tetris.ai_last_deep, ai.level, 0);
 
-    std::stringstream out;
-
     if (tetris.alive()) {
-        std::cout << tetris.ai_movs.movs.size() << std::endl;
-        processMoves();
-        out << tetris.m_clearLines << "|" << ((int) tetris.wallkick_spin) << "|";
+        std::cout << "moves: " << tetris.ai_movs.movs.size() << std::endl;
+        processMoves(result);
+//        out << tetris.m_clearLines << "|" << ((int) tetris.wallkick_spin) << "|";
         tetris.m_state = AI::Tetris::STATE_READY;
     } else {
-        out << "-1|0|";
+//        out << "-1|0|";
     }
 
     int i, bottom = AI_POOL_MAX_H - 5, solid_h = 20 - tetris.m_pool.m_h;
@@ -375,7 +404,6 @@ void Bot::outputAction() {
         out << "3,3,3,3,3,3,3,3,3,3";
         if (i != bottom - 1)out << ';';
     }
-    std::cout << out.str() << std::endl;
 
 }
 
@@ -389,109 +417,103 @@ void Bot::init() {
 void Bot::run() {
     init();
 
-    // round
-    tetris.reset(0);
+    std::stringstream out;
+    out <<
+        "0,0,0,0,0,0,0,0,0,0;"
+        "0,0,0,0,0,0,0,0,0,0;"
+        "0,0,0,0,0,0,0,0,0,0;"
+        "0,0,0,0,0,0,0,0,0,0;"
+        "0,0,0,0,0,0,0,0,0,0;"
+        "0,0,0,0,0,0,0,0,0,0;"
+        "0,0,0,0,0,0,0,0,0,0;"
+        "0,0,0,0,0,0,0,0,0,0;"
+        "0,0,0,0,0,0,0,0,0,0;"
+        "0,0,0,0,0,0,0,0,0,0;"
+        "0,0,0,0,0,0,0,0,0,0;"
+        "0,0,0,0,0,0,0,0,0,0;"
+        "0,0,0,0,0,0,0,0,0,0;"
+        "0,0,0,0,0,0,0,0,0,0;"
+        "0,0,0,0,0,0,0,0,0,0;"
+        "0,0,0,0,0,0,0,0,0,0;"
+        "0,0,0,0,0,0,0,0,0,0;"
+        "0,0,0,0,0,0,0,0,0,0;"
+        "0,0,0,0,0,0,0,0,0,0;"
+        "0,0,0,0,0,0,0,0,0,0;";
 
-    // ai_movs_flag = -1;
-    // ai_last_deep = 0;
-    m_upcomeAtt = 0;
+    std::array<AI::GemType, 7> allTypes = {
+            AI::GemType::GEMTYPE_I, AI::GemType::GEMTYPE_T, AI::GemType::GEMTYPE_O,
+            AI::GemType::GEMTYPE_S, AI::GemType::GEMTYPE_Z, AI::GemType::GEMTYPE_J, AI::GemType::GEMTYPE_L
+    };
 
-    // this_piece_type
-    tetris.m_next[0] = AI::getGem(AI::GEMTYPE_T, 0);
+    std::random_device rd;
+    std::mt19937 g(rd());
 
-    // next_pieces
-    updateQueue("ZILJL");
+    AI::GemType hold = AI::GemType::GEMTYPE_NULL;
 
-    // combo
-    tetris.m_pool.combo = 0;
+    std::deque<AI::GemType> pieces;
 
-    // inAtt
-    m_upcomeAtt = 4;
-
-    // field
-    updateField(
-            "0,0,0,0,0,0,0,0,0,0;"
-            "0,0,0,0,0,0,0,0,0,0;"
-            "0,0,0,0,0,0,0,0,0,0;"
-            "0,0,0,0,0,0,0,0,0,0;"
-            "0,0,0,0,0,0,0,0,0,0;"
-            "0,0,0,0,0,0,0,0,0,0;"
-            "0,0,0,0,0,0,0,0,0,0;"
-            "0,0,0,0,0,0,0,0,0,0;"
-            "0,0,0,0,0,0,0,0,0,0;"
-            "0,0,0,0,0,0,0,0,0,0;"
-            "0,0,0,0,0,0,0,0,0,0;"
-            "0,0,0,0,0,0,0,0,0,0;"
-            "0,0,0,0,0,0,0,0,0,0;"
-            "0,0,0,0,0,0,0,0,0,0;"
-            "0,0,0,0,0,0,0,0,0,0;"
-            "0,0,0,0,0,0,0,0,0,0;"
-            "0,0,0,0,0,0,0,0,0,0;"
-            "0,0,0,0,0,0,0,0,0,0;"
-            "0,0,0,0,0,0,0,0,0,0;"
-            "0,0,0,2,2,2,2,0,0,0;"
-//            "0,0,0,1,1,1,0,0,0,0;0,0,0,0,0,0,0,0,0,0;0,0,0,0,0,0,0,0,0,0;0,0,0,0,0,0,0,0,0,0;0,0,0,0,0,0,0,0,0,0;0,0,0,0,0,0,0,0,0,0;0,0,0,0,0,0,0,0,0,0;0,0,0,0,0,0,0,0,0,0;0,0,0,0,0,0,0,0,0,0;0,0,0,0,0,0,0,0,0,0;0,0,0,0,0,0,0,0,0,0;0,0,0,0,0,0,0,0,0,0;0,0,0,0,0,0,0,0,0,0;0,0,0,0,0,0,0,0,0,0;0,0,0,0,0,0,0,0,0,0;0,0,0,0,0,0,0,0,0,0;0,0,0,0,0,0,0,0,0,0;0,0,0,0,0,0,0,0,0,0;0,0,0,0,0,0,0,0,0,0;0,0,0,0,0,0,0,0,0,0"
-    );
-
-    // action
-//    outputAction();
-
-    // フィールドの設定
-    const AI::GameField pool = tetris.m_pool;
-    const AI::GameField &_pool = pool;
-
-    // 変数の初期化
-    int cur_num = AI::GEMTYPE_T;
-    const int combo_step_max = 32;
-    int upcomeAtt = std::min(m_upcomeAtt, pool.height() - AI::gem_beg_y - 1);
-
-    // MovingSimple
-    AI::MovingSimple it = AI::MovingSimple{};
-    it.x = 3;
-    it.y = 19;
-    it.spin = 0;
-    it.score = 0;
-    it.score2 = 0;
-    it.wallkick_spin = 0;
-    it.hold = false;
-    it.lastmove = AI::MovingSimple::MOV_NULL;
-
-    // MovsState
-    AI::MovsState ms = AI::MovsState();
-    ms.pool_last = _pool;
-    ms.player = 0;
-
-    signed char wallkick_spin = ms.pool_last.WallKickValue(cur_num, it.x, it.y, it.spin, it.wallkick_spin);
-    int clear = ms.pool_last.clearLines(wallkick_spin);
-    int att = ms.pool_last.getAttack(clear, wallkick_spin);
-    ms.clear = clear;
-    ms.att = att;
-    if (clear > 0) {
-        ms.combo = _pool.combo * combo_step_max + combo_step_max;// + 1 - clear;
-        ms.upcomeAtt = std::max(0, upcomeAtt - att);
-    } else {
-        ms.combo = 0;
-        ms.upcomeAtt = -upcomeAtt;
-        ms.pool_last.minusRow(upcomeAtt);
+    std::shuffle(allTypes.begin(), allTypes.end(), g);
+    for (const auto &type : allTypes) {
+        pieces.push_back(type);
     }
-    ms.max_att = att;
-    ms.max_combo = ms.combo; //ms_last.max_combo + getComboAttack( ms.pool_last.combo );
-    ms.first = it;
-    ms.first.score2 = 0;
 
-    int score2 = 0;  // prev score
-//    const AI::AI_Param aiParam = {13, 9, 17, 10, 29, 25, 39, 2, 12, 19, 7, 24, 21, 16, 14, 19, 200};
-    const AI::AI_Param aiParam = {13, 26, 17, 10, 29, 25, 39, 2, 12, 19, 7, 24, 21, 16, 14, 19, 200};
-    int t_dis = 14;
+    std::shuffle(allTypes.begin(), allTypes.end(), g);
+    for (const auto &type : allTypes) {
+        pieces.push_back(type);
+    }
 
-    ms.pool_last = _pool;
-//    ms.pool_last.paste(it.x, it.y, AI::getGem(cur_num, it.spin));
-    AI::Gem cur = AI::getGem(cur_num, 0);
+    int totalAttack = 0;
+    for (int i = 0; i < 100; ++i) {
+        std::cout << "================" << std::endl;
 
-    int score = AI::Evaluate(
-            score2, aiParam, tetris.m_pool, ms.pool_last, cur.num, 0,
-            ms.att, ms.clear, att, clear, wallkick_spin, _pool.combo, t_dis, upcomeAtt
-    );
+        if (pieces.size() < 14) {
+            std::shuffle(allTypes.begin(), allTypes.end(), g);
+            for (const auto &type : allTypes) {
+                pieces.push_back(type);
+            }
+        }
 
-    std::cout << "score=" << score << std::endl;
+        // round
+        tetris.reset(0);
+
+        m_upcomeAtt = 0;
+
+        // this_piece_type
+        AI::GemType head = pieces.front();
+        tetris.m_next[0] = AI::getGem(head, 0);
+        pieces.pop_front();
+
+        // next_pieces
+        std::stringstream p;
+        for (const auto &piece : pieces) {
+            auto gem = AI::getGem(piece, 0);
+            p << gem.getLetter();
+        }
+        std::cout << "head: " << head << std::endl;
+        std::cout << "hold: " << hold << std::endl;
+        std::cout << "next piece: " << p.str() << std::endl;
+        updateQueue(p.str());
+
+        // combo
+        tetris.m_pool.m_hold = hold;
+        tetris.m_pool.combo = 0;
+
+        // field
+        updateField(out.str());
+
+        // action
+        out = std::stringstream();
+        Result result;
+        outputAction(result, out);
+
+        if (result.holdGem) {
+            hold = result.holdGem;
+        }
+
+        totalAttack += result.attack;
+
+        std::cout << "total:" << std::endl;
+        std::cout << "  attack:" << totalAttack << std::endl;
+        std::cout << out.str() << std::endl;
+    }
 }
