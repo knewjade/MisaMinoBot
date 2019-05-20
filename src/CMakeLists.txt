@@ -9,7 +9,7 @@ set(CMAKE_CXX_FLAGS_RELEASE "-O3 -flto -march=native -DNDEBUG")
 
 project(${PROJECT_NAME})
 
-file(GLOB SRC *.cpp *.hpp misa/*.cpp misa/*.hpp)
+file(GLOB SRC *.cpp *.hpp core/*.cpp core/*.hpp misa/*.cpp misa/*.hpp fumen/*.cpp fumen/*.hpp)
 
 add_definitions(-D${PROJECT_NAME}_EXPORTS)
 
