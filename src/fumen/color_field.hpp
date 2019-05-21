@@ -25,8 +25,8 @@ namespace fumen {
         static ColorConverter create();
 
         ColorConverter(
-                const std::array<ColorType, 9> pieceToColor,
-                const std::array<core::PieceType, 7> colorToPiece
+                const std::array<ColorType, 7> pieceToColor,
+                const std::array<core::PieceType, 9> colorToPiece
         ) : pieceToColor(pieceToColor), colorToPiece(colorToPiece) {};
 
         ColorType parseToColorType(core::PieceType piece) const;
@@ -34,8 +34,8 @@ namespace fumen {
         core::PieceType parseToPieceType(ColorType color) const;
 
     private:
-        const std::array<ColorType, 9> pieceToColor;
-        const std::array<core::PieceType, 7> colorToPiece;
+        const std::array<ColorType, 7> pieceToColor;
+        const std::array<core::PieceType, 9> colorToPiece;
     };
 
     const ColorConverter kDefaultConverter = ColorConverter::create();

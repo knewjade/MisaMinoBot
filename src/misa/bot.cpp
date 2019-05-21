@@ -5,6 +5,8 @@
 #include <random>
 #include <algorithm>
 
+#include "../fumen/parser.hpp"
+
 using namespace std;
 
 Bot::Bot() : m_hold(' ') {
@@ -315,6 +317,111 @@ void Bot::setup() {
     tetris.m_attack = 0;
 }
 
+void fixPosition(core::PieceType piece, core::RotateType rotate, Result &result) {
+    result.piece = piece;
+    result.rotate = rotate;
+
+    switch (piece) {
+        case core::PieceType::I: {
+            switch (rotate) {
+                case core::RotateType::Spawn:
+                    result.x -= 2;
+                    result.y += 2;
+                    return;
+                case core::RotateType::Right:
+                    result.x -= 1;
+                    result.y += 2;
+                    return;
+                case core::RotateType::Reverse:
+                    result.x -= 1;
+                    result.y += 1;
+                    return;
+                case core::RotateType::Left:
+                    result.x -= 2;
+                    result.y += 1;
+                    return;
+            }
+            return;
+        }
+        case core::PieceType::T:
+        case core::PieceType::L:
+        case core::PieceType::J:
+        case core::PieceType::Z:
+        case core::PieceType::S:
+            {
+            switch (rotate) {
+                case core::RotateType::Spawn:
+                case core::RotateType::Right:
+                case core::RotateType::Reverse:
+                case core::RotateType::Left:
+                    result.x -= 1;
+                    result.y += 2;
+                    return;
+            }
+            return;
+        }
+        case core::PieceType::O: {
+            switch (rotate) {
+                case core::RotateType::Spawn:
+                    result.x -= 2;
+                    result.y += 2;
+                    return;
+                case core::RotateType::Right:
+                    result.x -= 2;
+                    result.y += 3;
+                    return;
+                case core::RotateType::Reverse:
+                    result.x -= 1;
+                    result.y += 3;
+                    return;
+                case core::RotateType::Left:
+                    result.x -= 1;
+                    result.y += 2;
+                    return;
+            }
+            return;
+        }
+    }
+
+    assert(false);
+}
+
+core::PieceType toPiece(int num) {
+    switch (num) {
+        case AI::GemType::GEMTYPE_I:
+            return core::PieceType::I;
+        case AI::GemType::GEMTYPE_T:
+            return core::PieceType::T;
+        case AI::GemType::GEMTYPE_O:
+            return core::PieceType::O;
+        case AI::GemType::GEMTYPE_L:
+            return core::PieceType::L;
+        case AI::GemType::GEMTYPE_J:
+            return core::PieceType::J;
+        case AI::GemType::GEMTYPE_S:
+            return core::PieceType::S;
+        case AI::GemType::GEMTYPE_Z:
+            return core::PieceType::Z;
+    }
+    assert(false);
+    return static_cast<core::PieceType>(-1);
+}
+
+core::RotateType toRotate(int num) {
+    switch (num) {
+        case 0:
+            return core::RotateType::Spawn;
+        case 1:
+            return core::RotateType::Right;
+        case 2:
+            return core::RotateType::Reverse;
+        case 3:
+            return core::RotateType::Left;
+    }
+    assert(false);
+    return static_cast<core::RotateType>(-1);
+}
+
 void Bot::processMoves(Result &result) {
     tetris.m_state = AI::Tetris::STATE_MOVING;
     while (tetris.ai_movs_flag == -1 && !tetris.ai_movs.movs.empty()) {
@@ -336,10 +443,14 @@ void Bot::processMoves(Result &result) {
                     << "piece=" << tetris.m_cur.num << ", "
                     << "spin=" << tetris.m_cur.spin << ", "
                     << "x=" << tetris.m_cur_x << ", "
-                    << "y=" << 20 - tetris.m_cur_y - 1 << ", "
+                    << "y=" << 18 - tetris.m_cur_y - 1 << ", "
                     << "isHold=" << tetris.m_hold << ", "
                     << "next hold=" << tetris.m_pool.m_hold << ", "
                     << std::endl;
+
+            result.x = 9 - tetris.m_cur_x;
+            result.y = 18 - tetris.m_cur_y - 1;
+            fixPosition(toPiece(tetris.m_cur.num), toRotate(tetris.m_cur.spin), result);
 
             if (tetris.m_hold) {
                 result.holdGem = static_cast<AI::GemType>(tetris.m_pool.m_hold);
@@ -462,6 +573,9 @@ void Bot::run() {
         pieces.push_back(type);
     }
 
+    auto elements = std::vector<fumen::Element>{};
+    auto converter = fumen::ColorConverter::create();
+
     int totalAttack = 0;
     for (int i = 0; i < 100; ++i) {
         std::cout << "================" << std::endl;
@@ -507,6 +621,9 @@ void Bot::run() {
         outputAction(result, out);
 
         if (result.holdGem) {
+            if (hold == AI::GemType::GEMTYPE_NULL) {
+                pieces.pop_front();
+            }
             hold = result.holdGem;
         }
 
@@ -515,5 +632,13 @@ void Bot::run() {
         std::cout << "total:" << std::endl;
         std::cout << "  attack:" << totalAttack << std::endl;
         std::cout << out.str() << std::endl;
+
+        elements.push_back(fumen::Element{
+                converter.parseToColorType(result.piece), result.rotate, result.x, result.y
+        });
     }
+
+    auto factory = core::Factory::create();
+    auto parser = fumen::Parser(factory, converter);
+    std::cout << "https://knewjade.github.io/fumen-for-mobile/#?d=v115@" << parser.encode(elements) << std::endl;
 }

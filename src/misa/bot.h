@@ -5,11 +5,16 @@
 #include <map>
 #include <string>
 #include <sstream>
+#include "../core/types.hpp"
 #include "tetrisgame.h"
 
 struct Result {
     AI::GemType holdGem;
     int attack;
+    int x;
+    int y;
+    core::PieceType piece;
+    core::RotateType rotate;
 };
 
 class Bot {

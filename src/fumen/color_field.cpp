@@ -2,7 +2,7 @@
 
 namespace fumen {
     ColorConverter ColorConverter::create() {
-        std::array<ColorType, 9> pieceToColor{};
+        std::array<ColorType, 7> pieceToColor{};
         pieceToColor[core::PieceType::T] = ColorType::T;
         pieceToColor[core::PieceType::I] = ColorType::I;
         pieceToColor[core::PieceType::O] = ColorType::O;
@@ -11,7 +11,7 @@ namespace fumen {
         pieceToColor[core::PieceType::L] = ColorType::L;
         pieceToColor[core::PieceType::J] = ColorType::J;
 
-        std::array<core::PieceType, 7> colorToPiece{};
+        std::array<core::PieceType, 9> colorToPiece{};
         colorToPiece[ColorType::T] = core::PieceType::T;
         colorToPiece[ColorType::I] = core::PieceType::I;
         colorToPiece[ColorType::O] = core::PieceType::O;
