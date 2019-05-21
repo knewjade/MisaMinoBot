@@ -57,7 +57,7 @@ namespace core {
         }
     }
 
-    Blocks Blocks::create(const RotateType rotateType, const std::array<Point, 4> &points) {
+    Blocks Blocks::create(const PieceType pieceType, const RotateType rotateType, const std::array<Point, 4> &points) {
         MinMax minmaxX = std::minmax({points[0].x, points[1].x, points[2].x, points[3].x});
         MinMax minmaxY = std::minmax({points[0].y, points[1].y, points[2].y, points[3].y});
 
@@ -76,7 +76,7 @@ namespace core {
             harddropColliders[index] = mergeCollider(harddropColliders[index + 1], mask, height, index);
         }
 
-        return Blocks(rotateType, points, mask, harddropColliders, minmaxX, minmaxY);
+        return Blocks(pieceType, rotateType, points, mask, harddropColliders, minmaxX, minmaxY);
     }
 
     template<size_t N>
@@ -87,10 +87,10 @@ namespace core {
             const std::array<std::array<Offset, N>, 4> &offsets,
             const std::array<Transform, 4> &transforms
     ) {
-        const Blocks &spawn = Blocks::create(RotateType::Spawn, points);
-        const Blocks &right = Blocks::create(RotateType::Right, rotateRight_(points));
-        const Blocks &reverse = Blocks::create(RotateType::Reverse, rotateReverse_(points));
-        const Blocks &left = Blocks::create(RotateType::Left, rotateLeft_(points));
+        const Blocks &spawn = Blocks::create(pieceType, RotateType::Spawn, points);
+        const Blocks &right = Blocks::create(pieceType, RotateType::Right, rotateRight_(points));
+        const Blocks &reverse = Blocks::create(pieceType, RotateType::Reverse, rotateReverse_(points));
+        const Blocks &left = Blocks::create(pieceType, RotateType::Left, rotateLeft_(points));
 
         std::array<Offset, 20> rightOffsets{};
         for (int rotate = 0; rotate < 4; ++rotate) {

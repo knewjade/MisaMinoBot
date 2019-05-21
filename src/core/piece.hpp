@@ -37,8 +37,11 @@ namespace core {
 
     class Blocks {
     public:
-        static Blocks create(const RotateType rotateType, const std::array<Point, 4> &points);
+        static Blocks create(
+                const PieceType pieceType, const RotateType rotateType, const std::array<Point, 4> &points
+        );
 
+        const PieceType pieceType;
         const RotateType rotateType;
         const std::array<Point, 4> points;
         const std::array<Collider, MAX_FIELD_HEIGHT> harddropColliders;
@@ -54,10 +57,10 @@ namespace core {
         Collider harddrop(int leftX, int lowerY) const;
 
     private:
-        Blocks(const RotateType rotateType, const std::array<Point, 4> points, const Bitboard mask,
-               const std::array<Collider, MAX_FIELD_HEIGHT> harddropColliders,
+        Blocks(const PieceType pieceType, const RotateType rotateType, const std::array<Point, 4> points,
+               const Bitboard mask, const std::array<Collider, MAX_FIELD_HEIGHT> harddropColliders,
                const MinMax &minMaxX, const MinMax &minMaxY)
-                : rotateType(rotateType), points(points), harddropColliders(harddropColliders),
+                : pieceType(pieceType), rotateType(rotateType), points(points), harddropColliders(harddropColliders),
                   minX(minMaxX.first), maxX(minMaxX.second), minY(minMaxY.first), maxY(minMaxY.second),
                   width(minMaxX.second - minMaxX.first + 1), height(minMaxY.second - minMaxY.first + 1), mask_(mask) {
         };
