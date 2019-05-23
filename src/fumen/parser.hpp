@@ -25,9 +25,15 @@ namespace fumen {
     public:
         Element(
                 const ColorType color, const core::RotateType rotate, const int x, const int y,
-                const bool isLock, const ColorField &field, const std::string &comment
+                const bool isLock, ColorField field, std::string comment
         ) : color(color), rotate(rotate), x(x), y(y), isLock(isLock),
-            validField(true), field(field), comment(comment) {
+            validField(true), field(std::move(field)), comment(std::move(comment)) {
+        }
+
+        Element(
+                const ColorType color, const core::RotateType rotate, const int x, const int y, std::string comment
+        ) : color(color), rotate(rotate), x(x), y(y), isLock(true),
+            validField(false), field(kNullField), comment(std::move(comment)) {
         }
 
         Element(
@@ -48,8 +54,8 @@ namespace fumen {
 
     private:
         const bool validField;
-        const ColorField &field;
-        const std::string &comment;
+        const ColorField field;
+        const std::string comment;
     };
 
     class FieldEncoder {

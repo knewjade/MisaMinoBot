@@ -31,8 +31,11 @@ namespace fumen {
         std::string escape(const std::string &str) {
             std::stringstream out;
             for (const auto &c : str) {
-                assert(std::find(ASCII_CHARACTERS.begin(), ASCII_CHARACTERS.end(), c) != ASCII_CHARACTERS.end());
-                out << c;
+                if (std::find(ASCII_CHARACTERS.begin(), ASCII_CHARACTERS.end(), c) != ASCII_CHARACTERS.end()) {
+                    out << c;
+                } else {
+                    out << std::hex << c;
+                }
             }
             return out.str();
         }
