@@ -511,111 +511,116 @@ void Bot::init() {
     changeSettings("level", "6");
 }
 
+void add7Pieces(
+        std::array<AI::GemType, 7> &allTypes,
+        std::deque<AI::GemType> &pieces,
+        std::mt19937 &mt199371
+) {
+    std::shuffle(allTypes.begin(), allTypes.end(), mt199371);
+    for (const auto &type : allTypes) {
+        pieces.push_back(type);
+    }
+}
+
 void Bot::run() {
     init();
-
-    std::stringstream out;
-    out <<
-        "0,0,0,0,0,0,0,0,0,0;"
-        "0,0,0,0,0,0,0,0,0,0;"
-        "0,0,0,0,0,0,0,0,0,0;"
-        "0,0,0,0,0,0,0,0,0,0;"
-        "0,0,0,0,0,0,0,0,0,0;"
-        "0,0,0,0,0,0,0,0,0,0;"
-        "0,0,0,0,0,0,0,0,0,0;"
-        "0,0,0,0,0,0,0,0,0,0;"
-        "0,0,0,0,0,0,0,0,0,0;"
-        "0,0,0,0,0,0,0,0,0,0;"
-        "0,0,0,0,0,0,0,0,0,0;"
-        "0,0,0,0,0,0,0,0,0,0;"
-        "0,0,0,0,0,0,0,0,0,0;"
-        "0,0,0,0,0,0,0,0,0,0;"
-        "0,0,0,0,0,0,0,0,0,0;"
-        "0,0,0,0,0,0,0,0,0,0;"
-        "0,0,0,0,0,0,0,0,0,0;"
-        "0,0,0,0,0,0,0,0,0,0;"
-        "0,0,0,0,0,0,0,0,0,0;"
-        "0,0,0,0,0,0,0,0,0,0;";
 
     std::array<AI::GemType, 7> allTypes = {
             AI::GemType::GEMTYPE_I, AI::GemType::GEMTYPE_T, AI::GemType::GEMTYPE_O,
             AI::GemType::GEMTYPE_S, AI::GemType::GEMTYPE_Z, AI::GemType::GEMTYPE_J, AI::GemType::GEMTYPE_L
     };
 
-    std::random_device rd;
-    std::mt19937 g(rd());
+    std::random_device randomDevice;
+    std::mt19937 mt199371(randomDevice());
 
-    AI::GemType hold = AI::GemType::GEMTYPE_NULL;
-
-    std::deque<AI::GemType> pieces;
-
-    std::shuffle(allTypes.begin(), allTypes.end(), g);
-    for (const auto &type : allTypes) {
-        pieces.push_back(type);
-    }
-
-    std::shuffle(allTypes.begin(), allTypes.end(), g);
-    for (const auto &type : allTypes) {
-        pieces.push_back(type);
-    }
-
-    auto elements = std::vector<fumen::Element>{};
+    auto factory = core::Factory::create();
     auto converter = fumen::ColorConverter::create();
+    auto parser = fumen::Parser(factory, converter);
 
-    int totalAttack = 0;
-    bool b2b = false;
-    auto o = "o"s;
-    auto x = "x"s;
-    for (int i = 0; i < 100; ++i) {
-        if (pieces.size() < 14) {
-            std::shuffle(allTypes.begin(), allTypes.end(), g);
-            for (const auto &type : allTypes) {
-                pieces.push_back(type);
+    const int max = 100;
+    auto prevAttacks = std::array<int, max>();
+
+    for (int count = 0; count < 2; ++count) {
+        // 開始フィールド
+        std::stringstream out;
+        out <<
+            "0,0,0,0,0,0,0,0,0,0;"
+            "0,0,0,0,0,0,0,0,0,0;"
+            "0,0,0,0,0,0,0,0,0,0;"
+            "0,0,0,0,0,0,0,0,0,0;"
+            "0,0,0,0,0,0,0,0,0,0;"
+            "0,0,0,0,0,0,0,0,0,0;"
+            "0,0,0,0,0,0,0,0,0,0;"
+            "0,0,0,0,0,0,0,0,0,0;"
+            "0,0,0,0,0,0,0,0,0,0;"
+            "0,0,0,0,0,0,0,0,0,0;"
+            "0,0,0,0,0,0,0,0,0,0;"
+            "0,0,0,0,0,0,0,0,0,0;"
+            "0,0,0,0,0,0,0,0,0,0;"
+            "0,0,0,0,0,0,0,0,0,0;"
+            "0,0,0,0,0,0,0,0,0,0;"
+            "0,0,0,0,0,0,0,0,0,0;"
+            "0,0,0,0,0,0,0,0,0,0;"
+            "0,0,0,0,0,0,0,0,0,0;"
+            "0,0,0,0,0,0,0,0,0,0;"
+            "0,0,0,0,0,0,0,0,0,0;";
+
+        AI::GemType hold = AI::GemType::GEMTYPE_NULL;
+
+        std::deque<AI::GemType> pieces;
+        add7Pieces(allTypes, pieces, mt199371);
+        add7Pieces(allTypes, pieces, mt199371);
+
+        auto elements = std::vector<fumen::Element>{};
+
+        int totalAttack = 0;
+        bool b2b = false;
+        for (int i = 0; i < max; ++i) {
+            if (pieces.size() < 14) {
+                add7Pieces(allTypes, pieces, mt199371);
             }
-        }
 
-        // round
-        tetris.reset(0);
+            // round
+            tetris.reset(0);
 
-        m_upcomeAtt = 0;
+            m_upcomeAtt = 0;
 
-        // this_piece_type
-        AI::GemType head = pieces.front();
-        tetris.m_next[0] = AI::getGem(head, 0);
-        pieces.pop_front();
+            // this_piece_type
+            AI::GemType head = pieces.front();
+            tetris.m_next[0] = AI::getGem(head, 0);
+            pieces.pop_front();
 
-        // next_pieces
-        std::stringstream p;
-        for (const auto &piece : pieces) {
-            auto gem = AI::getGem(piece, 0);
-            p << gem.getLetter();
-        }
-        updateQueue(p.str());
-
-        // combo
-        tetris.m_pool.m_hold = hold;
-        tetris.m_pool.combo = 0;
-
-        // field
-        updateField(out.str());
-
-        // action
-        out = std::stringstream();
-        Result result;
-        outputAction(result, out);
-
-        if (result.holdGem) {
-            if (hold == AI::GemType::GEMTYPE_NULL) {
-                pieces.pop_front();
+            // next_pieces
+            std::stringstream p;
+            for (const auto &piece : pieces) {
+                auto gem = AI::getGem(piece, 0);
+                p << gem.getLetter();
             }
-            hold = result.holdGem;
-        }
+            updateQueue(p.str());
 
-        totalAttack += result.attack;
+            // combo
+            tetris.m_pool.m_hold = hold;
+            tetris.m_pool.combo = 0;
+            tetris.m_pool.b2b = b2b ? 1 : 0;
 
-        if (0 < result.clears) {
-            b2b = result.b2b;
-        }
+            // field
+            updateField(out.str());
+
+            // action
+            out = std::stringstream();
+            Result result{};
+            outputAction(result, out);
+
+            if (result.holdGem) {
+                if (hold == AI::GemType::GEMTYPE_NULL) {
+                    pieces.pop_front();
+                }
+                hold = result.holdGem;
+            }
+
+            totalAttack += result.attack;
+
+            b2b = 0 < result.b2b;
 
 //        std::cout << "[" << i << "] total:" << std::endl;
 //        std::cout << "  attack:" << totalAttack << std::endl;
@@ -623,12 +628,11 @@ void Bot::run() {
 //        std::cout << "  clears:" << result.clears << std::endl;
 //        std::cout << out.str() << std::endl;
 
-        elements.emplace_back(fumen::Element{
-                converter.parseToColorType(result.piece), result.rotate, result.x, result.y, b2b ? "b2b: o" : "b2b: x",
-        });
-    }
+            elements.emplace_back(fumen::Element{
+                    converter.parseToColorType(result.piece), result.rotate, result.x, result.y, b2b ? "b2b: o" : "b2b: x",
+            });
+        }
 
-    auto factory = core::Factory::create();
-    auto parser = fumen::Parser(factory, converter);
-    std::cout << "https://knewjade.github.io/fumen-for-mobile/#?d=v115@" << parser.encode(elements) << std::endl;
+        std::cout << "https://knewjade.github.io/fumen-for-mobile/#?d=v115@" << parser.encode(elements) << std::endl;
+    }
 }
