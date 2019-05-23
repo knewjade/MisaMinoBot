@@ -10,11 +10,14 @@
 
 struct Result {
     AI::GemType holdGem;
-    int attack;
     int x;
     int y;
     core::PieceType piece;
     core::RotateType rotate;
+    int clears;
+    int attack;
+    int b2b;
+    int combo;
 };
 
 class Bot {

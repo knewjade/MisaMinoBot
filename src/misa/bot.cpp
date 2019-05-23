@@ -46,7 +46,6 @@ void Bot::startParser() {
             std::stringstream out;
             Result result;
             outputAction(result, out);
-            std::cout << out.str() << std::endl;
         } else if (command.size() == 0) {
             // no more commands, exit.
             break;
@@ -439,15 +438,6 @@ void Bot::processMoves(Result &result) {
         else if (mov == AI::Moving::MOV_DROP) {
             while (tetris.tryYMove(1));
 
-            std::cout
-                    << "piece=" << tetris.m_cur.num << ", "
-                    << "spin=" << tetris.m_cur.spin << ", "
-                    << "x=" << tetris.m_cur_x << ", "
-                    << "y=" << 18 - tetris.m_cur_y - 1 << ", "
-                    << "isHold=" << tetris.m_hold << ", "
-                    << "next hold=" << tetris.m_pool.m_hold << ", "
-                    << std::endl;
-
             result.x = 9 - tetris.m_cur_x;
             result.y = 18 - tetris.m_cur_y - 1;
             fixPosition(toPiece(tetris.m_cur.num), toRotate(tetris.m_cur.spin), result);
@@ -469,14 +459,10 @@ void Bot::processMoves(Result &result) {
     }
     tetris.clearLines();
 
-    std::cout
-            << "clears=" << tetris.m_clear_info.clears << ", "
-            << "attack=" << tetris.m_clear_info.attack << ", "
-            << "b2b=" << tetris.m_clear_info.b2b << ", "
-            << "combo=" << tetris.m_clear_info.combo << ", "
-            << std::endl;
-
+    result.clears = tetris.m_clear_info.clears;
     result.attack = tetris.m_clear_info.attack;
+    result.b2b = tetris.m_clear_info.b2b;
+    result.combo = tetris.m_clear_info.combo;
 }
 
 void Bot::outputAction(Result &result, std::stringstream &out) {
@@ -493,7 +479,7 @@ void Bot::outputAction(Result &result, std::stringstream &out) {
               deep, tetris.ai_last_deep, ai.level, 0);
 
     if (tetris.alive()) {
-        std::cout << "moves: " << tetris.ai_movs.movs.size() << std::endl;
+//        std::cout << "moves: " << tetris.ai_movs.movs.size() << std::endl;
         processMoves(result);
 //        out << tetris.m_clearLines << "|" << ((int) tetris.wallkick_spin) << "|";
         tetris.m_state = AI::Tetris::STATE_READY;
@@ -577,9 +563,10 @@ void Bot::run() {
     auto converter = fumen::ColorConverter::create();
 
     int totalAttack = 0;
+    bool b2b = false;
+    auto o = "o"s;
+    auto x = "x"s;
     for (int i = 0; i < 100; ++i) {
-        std::cout << "================" << std::endl;
-
         if (pieces.size() < 14) {
             std::shuffle(allTypes.begin(), allTypes.end(), g);
             for (const auto &type : allTypes) {
@@ -603,9 +590,6 @@ void Bot::run() {
             auto gem = AI::getGem(piece, 0);
             p << gem.getLetter();
         }
-        std::cout << "head: " << head << std::endl;
-        std::cout << "hold: " << hold << std::endl;
-        std::cout << "next piece: " << p.str() << std::endl;
         updateQueue(p.str());
 
         // combo
@@ -629,12 +613,18 @@ void Bot::run() {
 
         totalAttack += result.attack;
 
-        std::cout << "total:" << std::endl;
-        std::cout << "  attack:" << totalAttack << std::endl;
-        std::cout << out.str() << std::endl;
+        if (0 < result.clears) {
+            b2b = result.b2b;
+        }
 
-        elements.push_back(fumen::Element{
-                converter.parseToColorType(result.piece), result.rotate, result.x, result.y
+//        std::cout << "[" << i << "] total:" << std::endl;
+//        std::cout << "  attack:" << totalAttack << std::endl;
+//        std::cout << "  b2b:" << b2b << std::endl;
+//        std::cout << "  clears:" << result.clears << std::endl;
+//        std::cout << out.str() << std::endl;
+
+        elements.emplace_back(fumen::Element{
+                converter.parseToColorType(result.piece), result.rotate, result.x, result.y, b2b ? "b2b: o" : "b2b: x",
         });
     }
 
