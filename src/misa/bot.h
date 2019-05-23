@@ -5,6 +5,8 @@
 #include <map>
 #include <string>
 #include <sstream>
+
+#include "../fumen/color_field.hpp"
 #include "../core/types.hpp"
 #include "tetrisgame.h"
 
@@ -61,6 +63,7 @@ private:
     void updateState(const std::string & p1,const std::string & p2,const std::string & p3);
     void updateQueue(const std::string & s);
     void updateField(const std::string & s);
+    void updateField(const fumen::ColorField &colorField);
     void changeSettings(const std::string & p1,const std::string & p2);
 
     void processMoves(Result &result);

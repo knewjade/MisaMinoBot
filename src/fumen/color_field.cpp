@@ -40,7 +40,7 @@ namespace fumen {
     }
 
     bool ColorField::existsAt(int x, int y) const {
-        return field[y * 10 + x] == ColorType::Empty;
+        return field[y * 10 + x] != ColorType::Empty;
     }
 
     void ColorField::put(const core::Blocks &blocks, int x, int y) {
@@ -76,6 +76,21 @@ namespace fumen {
             for (int x = 0; x < 10; ++x) {
                 field[currentY * 10 + x] = ColorType::Empty;
             }
+        }
+    }
+
+    void ColorField::blockUp(std::vector<int> x) {
+        int n = x.size();
+        for (int index = field.size() - 1; n * 10 <= index; --index) {
+            field[index] = field[index - n * 10];
+        }
+
+        for (int index = 0; index < n * 10; ++index) {
+            field[index] = ColorType::Gray;
+        }
+
+        for (int y = 0; y < n; ++y) {
+            field[y * 10 + x[y]] = ColorType::Empty;
         }
     }
 }

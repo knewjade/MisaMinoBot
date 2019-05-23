@@ -91,6 +91,45 @@ void Bot::updateField(const std::string &s) {
     }
 }
 
+void Bot::updateField(const fumen::ColorField &colorField) {
+    vector<int> rows;
+    bool solidGarbage = false;
+    int row = 0;
+    int col = 0;
+    for (int y = 19; 0 <= y; --y) {
+        for (int x = 0; x < 10; ++x) {
+            bool b = colorField.existsAt(x, y);
+            switch (b ? '2' : '0') {
+                case '0':
+                case '1':
+                    ++col;
+                    break;
+                case '2':
+                    ++col;
+                    row |= (1 << (10 - col));
+                    break;
+                case '3':
+                    solidGarbage = true;
+                    break;
+                default:
+                    break;
+            }
+            if (solidGarbage) {
+                break;
+            }
+            if (col == 10) {
+                rows.push_back(row);
+                row = 0;
+                col = 0;
+            }
+        }
+    }
+    tetris.m_pool.reset(10, rows.size());
+    for (auto &row : rows) {
+        tetris.addRow(row);
+    }
+}
+
 void Bot::updateQueue(const std::string &s) {
     int i = 1;
     for (const auto &c : s) {
@@ -346,8 +385,7 @@ void fixPosition(core::PieceType piece, core::RotateType rotate, Result &result)
         case core::PieceType::L:
         case core::PieceType::J:
         case core::PieceType::Z:
-        case core::PieceType::S:
-            {
+        case core::PieceType::S: {
             switch (rotate) {
                 case core::RotateType::Spawn:
                 case core::RotateType::Right:
@@ -532,39 +570,20 @@ void Bot::run() {
 
     std::random_device randomDevice;
     std::mt19937 mt199371(randomDevice());
+    std::uniform_int_distribution<> rand010(0, 10);
+    std::uniform_int_distribution<> rand08(0, 8);
 
     auto factory = core::Factory::create();
     auto converter = fumen::ColorConverter::create();
-    auto parser = fumen::Parser(factory, converter);
 
     const int max = 100;
     auto prevAttacks = std::array<int, max>();
+    std::fill(prevAttacks.begin(), prevAttacks.end(), 0);
 
-    for (int count = 0; count < 2; ++count) {
+    int lastUpX = 0;
+
+    for (int count = 0; count < 5; ++count) {
         // 開始フィールド
-        std::stringstream out;
-        out <<
-            "0,0,0,0,0,0,0,0,0,0;"
-            "0,0,0,0,0,0,0,0,0,0;"
-            "0,0,0,0,0,0,0,0,0,0;"
-            "0,0,0,0,0,0,0,0,0,0;"
-            "0,0,0,0,0,0,0,0,0,0;"
-            "0,0,0,0,0,0,0,0,0,0;"
-            "0,0,0,0,0,0,0,0,0,0;"
-            "0,0,0,0,0,0,0,0,0,0;"
-            "0,0,0,0,0,0,0,0,0,0;"
-            "0,0,0,0,0,0,0,0,0,0;"
-            "0,0,0,0,0,0,0,0,0,0;"
-            "0,0,0,0,0,0,0,0,0,0;"
-            "0,0,0,0,0,0,0,0,0,0;"
-            "0,0,0,0,0,0,0,0,0,0;"
-            "0,0,0,0,0,0,0,0,0,0;"
-            "0,0,0,0,0,0,0,0,0,0;"
-            "0,0,0,0,0,0,0,0,0,0;"
-            "0,0,0,0,0,0,0,0,0,0;"
-            "0,0,0,0,0,0,0,0,0,0;"
-            "0,0,0,0,0,0,0,0,0,0;";
-
         AI::GemType hold = AI::GemType::GEMTYPE_NULL;
 
         std::deque<AI::GemType> pieces;
@@ -572,10 +591,14 @@ void Bot::run() {
         add7Pieces(allTypes, pieces, mt199371);
 
         auto elements = std::vector<fumen::Element>{};
+        auto colorField = fumen::ColorField(24);
 
         int totalAttack = 0;
         bool b2b = false;
-        for (int i = 0; i < max; ++i) {
+        auto currentAttacks = std::array<int, max>();
+        std::fill(currentAttacks.begin(), currentAttacks.end(), 0);
+
+        for (int frame = 0; frame < max; ++frame) {
             if (pieces.size() < 14) {
                 add7Pieces(allTypes, pieces, mt199371);
             }
@@ -583,7 +606,7 @@ void Bot::run() {
             // round
             tetris.reset(0);
 
-            m_upcomeAtt = 0;
+            m_upcomeAtt = prevAttacks[frame];
 
             // this_piece_type
             AI::GemType head = pieces.front();
@@ -604,10 +627,15 @@ void Bot::run() {
             tetris.m_pool.b2b = b2b ? 1 : 0;
 
             // field
-            updateField(out.str());
+            updateField(colorField);
+
+            if (tetris.m_pool.isCollide(3, 1, tetris.m_next[0])) {
+                std::cout << "end" << frame << std::endl;
+                break;
+            }
 
             // action
-            out = std::stringstream();
+            std::stringstream out = std::stringstream();
             Result result{};
             outputAction(result, out);
 
@@ -622,6 +650,8 @@ void Bot::run() {
 
             b2b = 0 < result.b2b;
 
+            currentAttacks[frame] = result.attack;
+
 //        std::cout << "[" << i << "] total:" << std::endl;
 //        std::cout << "  attack:" << totalAttack << std::endl;
 //        std::cout << "  b2b:" << b2b << std::endl;
@@ -629,10 +659,29 @@ void Bot::run() {
 //        std::cout << out.str() << std::endl;
 
             elements.emplace_back(fumen::Element{
-                    converter.parseToColorType(result.piece), result.rotate, result.x, result.y, b2b ? "b2b: o" : "b2b: x",
+                    converter.parseToColorType(result.piece), result.rotate, result.x, result.y,
+                    true, colorField, b2b ? "b2b: o" : "b2b: x",
             });
+
+            colorField.put(factory.get(result.piece, result.rotate), result.x, result.y);
+            colorField.clearLine();
+
+            auto attacks = std::vector<int>();
+            for (int up = 0; up < m_upcomeAtt - result.attack; ++up) {
+                if (rand010(mt199371) < (up == 0 ? 9 : 3)) {
+                    // 穴がずれる
+                    int nextUpX = rand08(mt199371);
+                    lastUpX = lastUpX <= nextUpX ? nextUpX : nextUpX + 1;
+                }
+                attacks.push_back(lastUpX);
+
+            }
+            colorField.blockUp(attacks);
         }
 
+        prevAttacks = currentAttacks;
+
+        auto parser = fumen::Parser(factory, converter);
         std::cout << "https://knewjade.github.io/fumen-for-mobile/#?d=v115@" << parser.encode(elements) << std::endl;
     }
 }

@@ -60,6 +60,8 @@ namespace fumen {
 
         void clearLine();
 
+        void blockUp(std::vector<int> x);
+
     private:
         int height;
         std::vector<int> field{};
