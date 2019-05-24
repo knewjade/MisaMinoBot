@@ -32,8 +32,8 @@ namespace AI {
         }
     }
 
-    int
-    Evaluate(int &clearScore, const AI_Param &ai_param, const GameField &last_pool, const GameField &pool, int cur_num,
+    double
+    Evaluate(double &clearScore, const AI_Param &ai_param, const GameField &last_pool, const GameField &pool, int cur_num,
              int curdepth,
              int total_clear_att, int total_clears, int clear_att, int clears, signed char wallkick_spin,
              int lastCombo, int t_dis, int upcomeAtt
@@ -41,7 +41,7 @@ namespace AI {
         const int pool_w = pool.width();
         const int pool_h = pool.height();
 
-        int score = 0;
+        double score = 0;
         // ��߶�
         //int last_min_y[32] = {0};
         int min_y[32] = {0};  // xごとのもっとも小さいy // 最大の高さ
@@ -112,7 +112,7 @@ namespace AI {
                 }
                 transitions += !last;
             }
-            score += ai_param.v_transitions * transitions / 10;
+            score += ai_param.v_transitions * transitions / 10.0;
         }
 
         if (pool.m_hold == GEMTYPE_I) {
@@ -143,7 +143,7 @@ namespace AI {
         int x_holes[32] = {0}; // 水平方向  // ホールの数
         int y_holes[32] = {0}; // 垂直方向 // ホールの数
         int x_op_holes[32] = {0}; // 水平方向
-        int pool_hole_score;
+        double pool_hole_score;
         int pool_total_cell = 0;  // 穴の合計数  // 穴 = 上方向にブロックが空白の数
 
         {   // pool
@@ -200,10 +200,10 @@ namespace AI {
                             first_hole_y[x] = y;
                         }
 
-                        int hs = 0;
+                        double hs = 0;
                         if (last) {
                             // 一つ前にブロックがなかった
-                            hs += ai_param.hole / 2;
+                            hs += ai_param.hole / 2.0;
                             if (y >= 0) ++x_renholes[y];
                         } else {
                             // 一つ前にブロックがあった
@@ -240,7 +240,7 @@ namespace AI {
                                 //if ( h > 4 ) h = 4;
                                 if (h > 0) {
                                     if ((_pool.row[y - 1] & (1 << x)) != 0) {
-                                        score += ai_param.hole_dis_factor * h * cnt / 5 / 2;
+                                        score += ai_param.hole_dis_factor * h * cnt / 5.0 / 2.0;
                                     }
                                 }
                             }
@@ -274,7 +274,7 @@ namespace AI {
                     total_emptys += emptys[y] * (y < 10 ? (10 + 10 - y) / 10.0 : 1);
                 }
 
-                score += ai_param.hole_dis_factor2 * total_emptys / 4;
+                score += ai_param.hole_dis_factor2 * total_emptys / 4.0;
             }
 
 
@@ -314,7 +314,7 @@ namespace AI {
                 int h = std::min(std::min(min_y[gem_beg_x], min_y[gem_beg_x + 1]),
                                  std::min(min_y[gem_beg_x + 2], min_y[gem_beg_x + 3]));
                 if (h < 8) {
-                    score += int(ai_param.miny_factor * (8 - h) * 2);
+                    score += ai_param.miny_factor * (8 - h) * 2;
                 }
 
                 if (avg < pool_w * center) {
@@ -333,35 +333,35 @@ namespace AI {
 
             // Attack calculation
             {
-                int s = 0;
+                double s = 0;
                 int t_att = total_clear_att;
                 double t_clear = total_clears; //+ total_clears / 4.0;
                 if (pool.b2b) s -= 5; // b2b score
 
                 if (t_clear > 0) {
-                    s -= int(((ai_param.clear_efficient) * (t_att)));
+                    s -= ai_param.clear_efficient * t_att;
                 }
 
                 {
-                    s += int(warning_factor * t_clear * ai_param.clear_useless_factor);
+                    s += warning_factor * t_clear * ai_param.clear_useless_factor;
                 }
 
-                int cs = 0;
+                double cs = 0;
                 // T eliminates the extra points, which is basically larger than the T1/T2 shape.
                 if (cur_num == GEMTYPE_T && wallkick_spin && clears > 0 && ai_param.tspin > 0) {
                     s -= ai_param.hold_T;
                     if (clears >= 3) {
                         if (clear_att >= clears * 2) { // T3
-                            cs -= int(warning_factor * (ai_param.tspin3 * 8) + ai_param.hole * 2);
+                            cs -= warning_factor * (ai_param.tspin3 * 8.0) + ai_param.hole * 2.0;
                         }
                     } else if (clears >= 2) {
                         if (clear_att >= clears * 2) { // T2
-                            cs -= int(warning_factor * (ai_param.tspin * 5 + ai_param.open_hole / 2));
+                            cs -= warning_factor * (ai_param.tspin * 5.0 + ai_param.open_hole / 2.0);
                         }
                     } else if (wallkick_spin == 1) { // T1
-                        cs -= int(warning_factor * (ai_param.tspin * 1 + ai_param.open_hole / 2));
+                        cs -= warning_factor * (ai_param.tspin * 1.0 + ai_param.open_hole / 2.0);
                     } else if (wallkick_spin == 2) { // Tmini
-                        cs -= int(warning_factor * (ai_param.tspin / 2));
+                        cs -= warning_factor * (ai_param.tspin / 2.0);
                     }
                 }
                 clearScore += cs;
@@ -394,11 +394,11 @@ namespace AI {
                     if (maxy_index > 1 && min_y[maxy_index - 2] >= min_y[maxy_index - 1] - 2) ++cnt;
                     if (maxy_index < pool_w - 2 && min_y[maxy_index + 2] >= min_y[maxy_index + 1] - 2) ++cnt;
                     if (cnt > 0) {
-                        score -= int(warning_factor * ai_param.tspin);
+                        score -= warning_factor * ai_param.tspin;
                         if ((~pool.row[ybeg] & pool.m_w_mask) == (1 << maxy_index)) { // T1 foundation
-                            score -= int(warning_factor * ai_param.tspin);
+                            score -= warning_factor * ai_param.tspin;
                             if ((~pool.row[ybeg - 1] & pool.m_w_mask) == (7 << (maxy_index - 1))) { // can be T2 perfect pit
-                                score -= int(warning_factor * (ai_param.tspin * cnt));
+                                score -= warning_factor * (ai_param.tspin * cnt);
                             }
                         }
                     }
@@ -420,12 +420,12 @@ namespace AI {
                                     factor = ybeg > 6 ? 1.0 / 5 : 1 / (1 + t_dis / 3.0);
                                 s += ai_param.open_hole;
                                 if ((~pool.row[ybeg] & pool.m_w_mask) == (1 << maxy_index)) { // can be T1
-                                    s += ai_param.tspin + ai_param.tspin * 1 * factor;
+                                    s += ai_param.tspin + ai_param.tspin * 1.0 * factor;
                                     if ((~row_data & pool.m_w_mask) == (7 << (maxy_index - 1))) { // can be T2 perfect pit
-                                        s += ai_param.tspin * 3 * factor;
+                                        s += ai_param.tspin * 3.0 * factor;
                                     }
                                 } else {
-                                    s += ai_param.tspin * 1 + ai_param.tspin * 2 * factor / 2;
+                                    s += ai_param.tspin * 1.0 + ai_param.tspin * 2.0 * factor / 2.0;
                                 }
                                 score -= int(warning_factor * s);
                             }
@@ -531,10 +531,10 @@ namespace AI {
                                 //++full;
                             } else {
                                 if ((pool.row[y] & (1 << (x + 2))) == 0) {
-                                    score -= int(warning_factor * ai_param.tspin3 * 3);
+                                    score -= warning_factor * ai_param.tspin3 * 3.0;
                                 }
                                 score -= s;
-                                score -= int(warning_factor * ai_param.tspin3 / 3);
+                                score -= warning_factor * ai_param.tspin3 / 3.0;
                                 continue;
                             }
                         }
@@ -545,15 +545,15 @@ namespace AI {
                                 //++full;
                             } else {
                                 score -= s;
-                                score -= int(warning_factor * ai_param.tspin3);
+                                score -= warning_factor * ai_param.tspin3;
                                 continue;
                             }
                         }
-                        score -= int(warning_factor * ai_param.tspin3 * 3);
+                        score -= warning_factor * ai_param.tspin3 * 3.0;
                         if (pool.row[y - 3] & (1 << (x + 1))) {
                             if (t_dis < 7) {
-                                score -= int(warning_factor * (ai_param.tspin3 * 1) + ai_param.hole * 2);
-                                score -= int(warning_factor * ai_param.tspin3 * 3 / (t_dis + 1));
+                                score -= warning_factor * (ai_param.tspin3 * 1.0) + ai_param.hole * 2.0;
+                                score -= warning_factor * ai_param.tspin3 * 3.0 / (t_dis + 1.0);
                             }
                         }
                     } else if (((row_y[3] >> (x + 1)) & (7)) == 4 /*001*/ ) { // Mirroring situation
@@ -588,13 +588,13 @@ namespace AI {
                         if (((row_y[0] >> (x + 1)) & (1)) == 0 && y - min_y[x - 2] > 3) continue;
                         int s = 0;
                         // tp3 * 1
-                        s -= int(warning_factor *
-                                 ai_param.tspin3);// + int( warning_factor * ( ai_param.tspin * 4 + ai_param.open_hole ) );
+                        // + int( warning_factor * ( ai_param.tspin * 4 + ai_param.open_hole ) );
+                        s -= warning_factor * ai_param.tspin3;
                         score += s;
                         if (y <= pool_h - 3 && (pool.row[y + 3] & (1 << x)) == 0) {
                             int r = ~pool.row[y + 3] & pool.m_w_mask;
                             if ((r & (r - 1)) == 0) {
-                                score -= int(warning_factor * (ai_param.tspin * 4 + ai_param.open_hole));
+                                score -= warning_factor * (ai_param.tspin * 4.0 + ai_param.open_hole);
                             }
                         }
                         //int full = 0;
@@ -615,10 +615,10 @@ namespace AI {
                                 //++full;
                             } else {
                                 if ((pool.row[y] & (1 << (x - 2))) == 0) {
-                                    score -= int(warning_factor * ai_param.tspin3 * 3);
+                                    score -= warning_factor * ai_param.tspin3 * 3.0;
                                 }
                                 score -= s;
-                                score -= int(warning_factor * ai_param.tspin3 / 3);
+                                score -= warning_factor * ai_param.tspin3 / 3.0;
                                 continue;
                             }
                         }
@@ -629,15 +629,15 @@ namespace AI {
                                 //++full;
                             } else {
                                 score -= s;
-                                score -= int(warning_factor * ai_param.tspin3);
+                                score -= warning_factor * ai_param.tspin3;
                                 continue;
                             }
                         }
-                        score -= int(warning_factor * ai_param.tspin3 * 3);
+                        score -= warning_factor * ai_param.tspin3 * 3.0;
                         if (pool.row[y - 3] & (1 << (x - 1))) {
                             if (t_dis < 7) {
-                                score -= int(warning_factor * (ai_param.tspin3 * 1) + ai_param.hole * 2);
-                                score -= int(warning_factor * ai_param.tspin3 * 3 / (t_dis + 1));
+                                score -= warning_factor * (ai_param.tspin3 * 1.0) + ai_param.hole * 2.0;
+                                score -= warning_factor * ai_param.tspin3 * 3.0 / (t_dis + 1.0);
                             }
                         }
                     }
@@ -682,7 +682,7 @@ namespace AI {
                 //if ( maxy_4w - maxy_4w_combo > 15 ) { // ����г���10Ԥ���оͲ���
                 //    maxy_4w = -10;
                 //}
-                if (maxy_4w - maxy_4w_combo < 9 && pool_hole_score > ai_param.hole * (maxy_4w - maxy_4w_combo) / 2) {
+                if (maxy_4w - maxy_4w_combo < 9 && pool_hole_score > ai_param.hole * (maxy_4w - maxy_4w_combo) / 2.0 ) {
                     maxy_4w = -10;
                 }
 
@@ -709,9 +709,9 @@ namespace AI {
                         if (sum == 3 || sum == 0 || sum == 4) //{ // - (pool_h - maxy_4w) - clears * lastCombo * 2
                         {
                             int hv = (maxy_4w - maxy_4w_combo + 1) * 1 + pool.combo;
-                            s += ai_param.strategy_4w * (hv) + (ai_param.hole * 2 + ai_param.tspin * 4);
+                            s += ai_param.strategy_4w * hv + (ai_param.hole * 2.0 + ai_param.tspin * 4.0);
                             if (sum > 0) {
-                                s -= ai_param.strategy_4w / 3;
+                                s -= ai_param.strategy_4w / 3.0;
                             }
                         }
                         if (s > 0) {
@@ -1003,12 +1003,12 @@ namespace AI {
             }
             pq->clear();
             int max_combo = 3;
-            int max_search_score = pq_last->back().first.score;  // 最悪値を取得
+            double max_search_score = pq_last->back().first.score;  // 最悪値を取得
             {
                 for (int s = pq_last->size(), i = s / 2; i < s; ++i) {
                     max_search_score = std::max(max_search_score, pq_last->queue[i].first.score);
                 }
-                max_search_score = (max_search_score * 2 + pq_last->front().first.score) / 3;
+                max_search_score = (max_search_score * 2.0 + pq_last->front().first.score) / 3.0;
             }
             std::set<GameState> gsSet;
             for (int pqmax_size = (int) pq_last->size(),
