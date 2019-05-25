@@ -472,14 +472,6 @@ void Bot::init() {
     changeSettings("level", "6");
 
     setup();
-
-    AI::AI_Param param = {
-//            13.0, 9.0, 17.0, 10.0, 29.0, 25.0, 39.0, 2.0, 12.0, 19.0, 7.0, 24.0, 21.0, 16.0, 14.0, 19.0, 200.0
-//            13.0, 9.0, 17.0, 10.0, 29.0, 25.0, 39.0, 2.0, 12.0, 19.0, 7.0, 24.0, 21.0, 16.0, 14.0, 19.0, 200.0
-    };
-    tetris.m_ai_param = param;
-
-
 }
 
 void add7Pieces(
@@ -494,7 +486,25 @@ void add7Pieces(
 }
 
 void Bot::run() {
+    auto params = std::array<double, 17>{
+            13.0, 9.0, 17.0, 10.0, 29.0,
+            25.0, 39.0, 2.0, 12.0, 19.0,
+            7.0, 24.0, 21.0, 16.0, 14.0,
+            19.0, 200.0
+    };
+    run(params);
+}
+
+double Bot::run(std::array<double, 17> params) {
     init();
+
+    AI::AI_Param param = {
+//            13.0, 9.0, 17.0, 10.0, 29.0, 25.0, 39.0, 2.0, 12.0, 19.0, 7.0, 24.0, 21.0, 16.0, 14.0, 19.0, 200.0
+//            13.0, 9.0, 17.0, 10.0, 29.0, 25.0, 39.0, 2.0, 12.0, 19.0, 7.0, 24.0, 21.0, 16.0, 14.0, 19.0, 200.0
+            params[0], params[1], params[2], params[3], params[4], params[5], params[6], params[7], params[8],
+            params[9], params[10], params[11], params[12], params[13], params[14], params[15], params[16],
+    };
+    tetris.m_ai_param = param;
 
     std::array<AI::GemType, 7> allTypes = {
             AI::GemType::GEMTYPE_I, AI::GemType::GEMTYPE_T, AI::GemType::GEMTYPE_O,
@@ -507,15 +517,17 @@ void Bot::run() {
     std::uniform_int_distribution<> rand08(0, 8);
 
     auto factory = core::Factory::create();
-    auto converter = fumen::ColorConverter::create();
+//    auto converter = fumen::ColorConverter::create();
 
-    const int max = 100;
+    const int max = 50;
     auto prevAttacks = std::array<int, max>();
     std::fill(prevAttacks.begin(), prevAttacks.end(), 0);
 
     int lastUpX = 0;
+    double score = 0.0;
 
-    for (int count = 0; count < 5; ++count) {
+    const int maxChallenge = 5;
+    for (int count = 0; count < maxChallenge; ++count) {
         // 開始フィールド
         AI::GemType hold = AI::GemType::GEMTYPE_NULL;
 
@@ -564,6 +576,7 @@ void Bot::run() {
 
             if (tetris.m_pool.isCollide(3, 1, tetris.m_next[0])) {
                 std::cout << "end" << frame << std::endl;
+                score += 0.0;
                 break;
             }
 
@@ -591,10 +604,10 @@ void Bot::run() {
 //        std::cout << "  clears:" << result.clears << std::endl;
 //        std::cout << out.str() << std::endl;
 
-            elements.emplace_back(fumen::Element{
-                    converter.parseToColorType(result.piece), result.rotate, result.x, result.y,
-                    true, colorField, b2b ? "b2b: o" : "b2b: x",
-            });
+//            elements.emplace_back(fumen::Element{
+//                    converter.parseToColorType(result.piece), result.rotate, result.x, result.y,
+//                    true, colorField, b2b ? "b2b: o" : "b2b: x",
+//            });
 
             colorField.put(factory.get(result.piece, result.rotate), result.x, result.y);
             colorField.clearLine();
@@ -614,7 +627,11 @@ void Bot::run() {
 
         prevAttacks = currentAttacks;
 
-        auto parser = fumen::Parser(factory, converter);
-        std::cout << "https://knewjade.github.io/fumen-for-mobile/#?d=v115@" << parser.encode(elements) << std::endl;
+//        auto parser = fumen::Parser(factory, converter);
+//        std::cout << "https://knewjade.github.io/fumen-for-mobile/#?d=v115@" << parser.encode(elements) << std::endl;
+
+        score += totalAttack;
     }
+
+    return score / maxChallenge;
 }

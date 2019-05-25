@@ -33,6 +33,7 @@ public:
     void outputAction(Result &result, std::stringstream &out);
 
     void run();
+    double run(std::array<double, 17> params);
     void init();
 
     struct tetris_ai {

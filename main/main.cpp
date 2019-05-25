@@ -14,7 +14,7 @@ double rastrigin(const std::array<double, N> &array) {
     return sum;
 }
 
-const int N = 20;
+const int N = 17;
 typedef std::array<double, N> Gene;
 
 class Individual {
@@ -34,6 +34,13 @@ struct Comp {
 const int K = 1;
 const int P = N * 22;
 const int C = N * 8;
+
+Bot bot{};
+
+double calcMisaminoScore(const std::array<double, 17> &array) {
+    return -bot.run(array);
+//    return rastrigin<10, 17>(array);
+}
 
 template<int C>
 void generate(
@@ -74,7 +81,8 @@ void generate(
             }
         }
 
-        candidate.fitness = rastrigin<10, N>(candidate.gene);
+//        candidate.fitness = rastrigin<10, N>(candidate.gene);
+        candidate.fitness = calcMisaminoScore(candidate.gene);
     }
 
     std::sort(candidates.begin(), candidates.end(), Comp());
@@ -85,15 +93,12 @@ void generate(
 }
 
 int main() {
-//    Bot bot;
-//    bot.run();
-
 //    const Gene gene = std::array<double, N>{1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0};
 //    std::cout << rastrigin<10, N>(gene) << std::endl;
 
     std::random_device randomDevice;
     std::mt19937 mt199371(randomDevice());
-    std::uniform_real_distribution<> rand(-5.12, 5.12);
+    std::uniform_real_distribution<> rand(-100.0, 100.0);
 
     Population population = std::deque<Individual>{};
     for (int index = 0; index < P; ++index) {
@@ -101,7 +106,8 @@ int main() {
         for (int dim = 0; dim < N; ++dim) {
             gene[dim] = rand(mt199371);
         }
-        double fitness = rastrigin<10, N>(gene);
+//        double fitness = rastrigin<10, N>(gene);
+        double fitness = calcMisaminoScore(gene);
         population.emplace_back(Individual{fitness, gene});
     }
 
@@ -111,7 +117,7 @@ int main() {
 
     std::cout << population[0].fitness << std::endl;
     for (int i = 0; i < N; ++i) {
-        std::cout << population[0].gene[i];
+        std::cout << population[0].gene[i] << ",";
     }
     std::cout << std::endl;
 
@@ -139,7 +145,7 @@ int main() {
 
         std::cout << population[0].fitness << std::endl;
         for (int i = 0; i < N; ++i) {
-            std::cout << population[0].gene[i];
+            std::cout << population[0].gene[i] << ",";
         }
         std::cout << std::endl;
     }
